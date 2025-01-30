@@ -19,20 +19,25 @@ package com.example.reply.ui
 import androidx.activity.compose.BackHandler
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBars
+import androidx.compose.foundation.layout.systemBars
+import androidx.compose.foundation.layout.windowInsetsBottomHeight
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.LargeFloatingActionButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Alignment
@@ -51,7 +56,6 @@ import com.example.reply.ui.utils.ReplyNavigationType
 import com.google.accompanist.adaptive.HorizontalTwoPaneStrategy
 import com.google.accompanist.adaptive.TwoPane
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReplyInboxScreen(
     contentType: ReplyContentType,
@@ -109,20 +113,18 @@ fun ReplyInboxScreen(
             )
             // When we have bottom navigation we show FAB at the bottom end.
             if (navigationType == ReplyNavigationType.BOTTOM_NAVIGATION) {
-                LargeFloatingActionButton(
+                ExtendedFloatingActionButton(
+                    text = { Text(text = stringResource(id = R.string.compose)) },
+                    icon = { Icon(Icons.Default.Edit, stringResource(id = R.string.compose)) },
                     onClick = { /*TODO*/ },
                     modifier = Modifier
                         .align(Alignment.BottomEnd)
                         .padding(16.dp),
                     containerColor = MaterialTheme.colorScheme.tertiaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Edit,
-                        contentDescription = stringResource(id = R.string.edit),
-                        modifier = Modifier.size(28.dp)
-                    )
-                }
+                    contentColor = MaterialTheme.colorScheme.onTertiaryContainer,
+                    expanded = emailLazyListState.lastScrolledBackward ||
+                        !emailLazyListState.canScrollBackward
+                )
             }
         }
     }
@@ -167,7 +169,7 @@ fun ReplyEmailList(
     modifier: Modifier = Modifier,
     navigateToDetail: (Long, ReplyContentType) -> Unit
 ) {
-    Box(modifier = modifier) {
+    Box(modifier = modifier.windowInsetsPadding(WindowInsets.statusBars)) {
         ReplyDockedSearchBar(
             emails = emails,
             onSearchItemSelected = { searchedEmail ->
@@ -175,7 +177,7 @@ fun ReplyEmailList(
             },
             modifier = Modifier
                 .fillMaxWidth()
-                .padding(16.dp)
+                .padding(horizontal = 16.dp, vertical = 16.dp)
         )
 
         LazyColumn(
@@ -195,6 +197,10 @@ fun ReplyEmailList(
                     isSelected = selectedEmailIds.contains(email.id)
                 )
             }
+            // Add extra spacing at the bottom if
+            item {
+                Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
+            }
         }
     }
 }
@@ -202,14 +208,13 @@ fun ReplyEmailList(
 @Composable
 fun ReplyEmailDetail(
     email: Email,
+    modifier: Modifier = Modifier,
     isFullScreen: Boolean = true,
-    modifier: Modifier = Modifier.fillMaxSize(),
     onBackPressed: () -> Unit = {}
 ) {
     LazyColumn(
         modifier = modifier
             .background(MaterialTheme.colorScheme.inverseOnSurface)
-            .padding(top = 16.dp)
     ) {
         item {
             EmailDetailAppBar(email, isFullScreen) {
@@ -218,6 +223,9 @@ fun ReplyEmailDetail(
         }
         items(items = email.threads, key = { it.id }) { email ->
             ReplyEmailThreadItem(email = email)
+        }
+        item {
+            Spacer(Modifier.windowInsetsBottomHeight(WindowInsets.systemBars))
         }
     }
 }

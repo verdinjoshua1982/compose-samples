@@ -25,6 +25,10 @@ This sample showcases:
 
 <img src="screenshots/screenshots.png"/>
 
+<img src="screenshots/widget.png" width="300"/>
+
+<img src="screenshots/widget_discoverability.png" width="300"/>
+
 ### Status: 🚧 In progress
 
 Jetchat is still in under development, and some features are not yet implemented.
@@ -98,4 +102,3 @@ limitations under the License.
 ```
 
 [compose]: https://developer.android.com/jetpack/compose
-[coil-accompanist]: https://google.github.io/accompanist/coil/
