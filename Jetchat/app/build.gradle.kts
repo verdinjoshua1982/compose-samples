@@ -17,6 +17,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.compose)
 }
 
 android {
@@ -35,28 +36,34 @@ android {
     }
 
     signingConfigs {
-        // We use a bundled debug keystore, to allow debug builds from CI to be upgradable
-        named("debug") {
-            storeFile = rootProject.file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        // Important: change the keystore for a production deployment
+        val userKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
+        val localKeystore = rootProject.file("debug_2.keystore")
+        val hasKeyInfo = userKeystore.exists()
+        create("release") {
+            storeFile = if (hasKeyInfo) userKeystore else localKeystore
+            storePassword = if (hasKeyInfo) "android" else System.getenv("compose_store_password")
+            keyAlias = if (hasKeyInfo) "androiddebugkey" else System.getenv("compose_key_alias")
+            keyPassword = if (hasKeyInfo) "android" else System.getenv("compose_key_password")
         }
     }
 
     buildTypes {
         getByName("debug") {
-            signingConfig = signingConfigs.getByName("debug")
+
         }
 
         getByName("release") {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro")
         }
     }
 
+    kotlinOptions {
+        jvmTarget = "17"
+    }
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_17
         targetCompatibility = JavaVersion.VERSION_17
@@ -65,10 +72,6 @@ android {
     buildFeatures {
         compose = true
         viewBinding = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
 
     packaging.resources {
@@ -84,6 +87,8 @@ dependencies {
     implementation(composeBom)
     androidTestImplementation(composeBom)
 
+    implementation(libs.androidx.glance.appwidget)
+    implementation(libs.androidx.glance.material3)
     implementation(libs.kotlin.stdlib)
     implementation(libs.kotlinx.coroutines.android)
 
@@ -96,7 +101,6 @@ dependencies {
     implementation(libs.androidx.lifecycle.runtime.compose)
     implementation(libs.androidx.navigation.fragment)
     implementation(libs.androidx.navigation.ui.ktx)
-    implementation(libs.google.android.material)
 
     implementation(libs.androidx.compose.foundation.layout)
     implementation(libs.androidx.compose.material3)

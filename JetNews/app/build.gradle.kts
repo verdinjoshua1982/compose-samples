@@ -17,6 +17,7 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
+    alias(libs.plugins.compose)
 }
 
 android {
@@ -34,44 +35,32 @@ android {
     }
 
     signingConfigs {
-        // We use a bundled debug keystore, to allow debug builds from CI to be upgradable
-        named("debug") {
-            storeFile = rootProject.file("debug.keystore")
-            storePassword = "android"
-            keyAlias = "androiddebugkey"
-            keyPassword = "android"
+        // Important: change the keystore for a production deployment
+        val userKeystore = File(System.getProperty("user.home"), ".android/debug.keystore")
+        val localKeystore = rootProject.file("debug_2.keystore")
+        val hasKeyInfo = userKeystore.exists()
+        create("release") {
+            storeFile = if (hasKeyInfo) userKeystore else localKeystore
+            storePassword = if (hasKeyInfo) "android" else System.getenv("compose_store_password")
+            keyAlias = if (hasKeyInfo) "androiddebugkey" else System.getenv("compose_key_alias")
+            keyPassword = if (hasKeyInfo) "android" else System.getenv("compose_key_password")
         }
     }
 
     buildTypes {
         getByName("debug") {
-            signingConfig = signingConfigs.getByName("debug")
+
         }
 
         getByName("release") {
             isMinifyEnabled = true
-            signingConfig = signingConfigs.getByName("debug")
+            signingConfig = signingConfigs.getByName("release")
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"),
                     "proguard-rules.pro")
         }
     }
-
-    testOptions {
-        unitTests {
-            isReturnDefaultValues = true
-            isIncludeAndroidResources = true
-        }
-    }
-
-    // Tests can be Robolectric or instrumented tests
-    sourceSets {
-        val sharedTestDir = "src/sharedTest/java"
-        getByName("test") {
-            java.srcDir(sharedTestDir)
-        }
-        getByName("androidTest") {
-            java.srcDir(sharedTestDir)
-        }
+    kotlinOptions {
+        jvmTarget = "17"
     }
 
     compileOptions {
@@ -81,10 +70,6 @@ android {
 
     buildFeatures {
         compose = true
-    }
-
-    composeOptions {
-        kotlinCompilerExtensionVersion = libs.versions.compose.compiler.get()
     }
 
     packaging.resources {
@@ -113,9 +98,6 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 
-    implementation(libs.accompanist.swiperefresh)
-    implementation(libs.accompanist.systemuicontroller)
-
     implementation(libs.androidx.appcompat)
     implementation(libs.androidx.activity.ktx)
     implementation(libs.androidx.core.ktx)
@@ -133,8 +115,6 @@ dependencies {
     implementation(libs.androidx.navigation.compose)
     implementation(libs.androidx.window)
 
-    implementation(libs.google.android.material)
-
     androidTestImplementation(libs.junit)
     androidTestImplementation(libs.androidx.test.core)
     androidTestImplementation(libs.androidx.test.runner)
@@ -144,11 +124,5 @@ dependencies {
     androidTestImplementation(libs.kotlinx.coroutines.test)
     androidTestImplementation(libs.androidx.compose.ui.test)
     androidTestImplementation(libs.androidx.compose.ui.test.junit4)
-    // Robolectric dependencies
-    testImplementation(libs.androidx.compose.ui.test.junit4)
-    testImplementation(libs.robolectric)
 }
 
-tasks.withType<Test>().configureEach {
-    systemProperties.put("robolectric.logging", "stdout")
-} 
